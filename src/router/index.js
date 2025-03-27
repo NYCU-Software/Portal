@@ -24,6 +24,16 @@ const router = createRouter({
       name: "profile",
       component: () => import("../views/ProfileView.vue"),
     },
+    {
+      path: "/consent",
+      name: "consent",
+      component: () => import("../views/ConsentView.vue"),
+    },
+    {
+      path: "/admin/clients",
+      name: "clients",
+      component: () => import("../views/ApplicationView.vue"),
+    },
   ],
 });
 

@@ -18,9 +18,6 @@
   <div>
     <p class="text-2xl"><a href="/services">Services</a></p>
     <ul class="max-w-md space-y-1 list-disc list-inside">
-        <li><a href="https://dns.nycu.me">申請三級網域</a></li>
-        <li><a href="https://mail.nycu.me">申請臨時 Email</a></li>
-        <li><a href="https://nasa.nycu.me">System Judge</a></li>
     </ul>
   </div>
   <br />
@@ -28,27 +25,17 @@
     <br />
     <p class="text-2xl">Administrator</p>
     <ul class="max-w-md space-y-1 list-disc list-inside">
-      <li><a href="/admin/user">User Manager</a></li>
+      <li><a href="/admin/clients">應用程式管理</a></li>
+      <li><a href="/admin/users">用戶管理</a></li>
     </ul>
   </div>
 </template>
 
 <script>
-import axios from "axios"
-import Cookies from "js-cookie"
+import axios from "axios";
+import Cookies from "js-cookie";
+const baseAPI = import.meta.env.VITE_KRATOS_URL;
 
-import { Configuration, FrontendApi } from '@ory/kratos-client'
-
-const kratos = new FrontendApi(
-  new Configuration({
-    basePath: import.meta.env.VITE_KRATOS_URL,
-    baseOptions: {
-      withCredentials: true,
-    },
-  })
-)
-
-console.log(kratos)
 export default {
   props: {
     username: { type: String, default: "Anonymous" },
@@ -56,24 +43,23 @@ export default {
     isLogged: { type: Number, default: 0 },
   },
   data() {
-    return {}
+    return {};
   },
-  mounted() {
-  },
+  mounted() {},
   methods: {
-
     async logout() {
       try {
-		  const { data: flow } = await kratos.createBrowserLogoutFlow()
-		  await kratos.updateLogoutFlow({
-			token: flow.logout_token,
-		  })
-		  window.location.reload()
-      } catch (error) {
-        console.error('Logout error:', error)
+        const logoutURL = new URL("/self-service/logout/browser", baseAPI)
+        const r = await axios.get(logoutURL.toString(), { withCredentials: true })
+		console.log(r.data.logout_token)
+		if (r.data.logout_token) {
+		
+          window.location.href = new URL(`/self-service/logout?token=${r.data.logout_token}`, baseAPI).toString()
+        }
+      } catch (e) {
+        console.error("Logout error:", e)
       }
-    }
+    },
   },
-}
+};
 </script>
-

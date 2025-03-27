@@ -56,7 +56,7 @@
             >
             <input
               type="password"
-			  name="password2"
+              name="password2"
               id="password2"
               placeholder="••••••••"
               class="border rounded-lg block w-full p-2.5 text-gray-900"
@@ -78,8 +78,7 @@
 </template>
 
 <script>
-
-import axios from 'axios'
+import axios from "axios";
 const baseAPI = import.meta.env.VITE_KRATOS_URL;
 
 export default {
@@ -94,59 +93,61 @@ export default {
   },
   methods: {
     async submit() {
-      if(this.password != this.password2) {
-		this.message = "The password does not match.";
-		return;
-      } 
-	  this.message = "";
+      if (this.password != this.password2) {
+        this.message = "The password does not match.";
+        return;
+      }
+      this.message = "";
 
       try {
-        const createFlowURL = new URL('/self-service/registration/browser', baseAPI).toString()
-        const createFlowRes = await axios.get(
-          createFlowURL,
-          {
-            withCredentials: true
-          }
-        )
-        const flowData = createFlowRes.data
-        const flowId = flowData.id
+        const createFlowURL = new URL(
+          "/self-service/registration/browser",
+          baseAPI,
+        ).toString();
+        const createFlowRes = await axios.get(createFlowURL, {
+          withCredentials: true,
+        });
+        const flowData = createFlowRes.data;
+        const flowId = flowData.id;
 
-        let csrfToken = ''
-        const nodes = flowData.ui?.nodes || []
+        let csrfToken = "";
+        const nodes = flowData.ui?.nodes || [];
         for (const node of nodes) {
-          if (node.attributes?.name === 'csrf_token') {
-            csrfToken = node.attributes.value
-            break
+          if (node.attributes?.name === "csrf_token") {
+            csrfToken = node.attributes.value;
+            break;
           }
         }
-        const updateFlowURL = new URL(`/self-service/registration?flow=${flowId}`, baseAPI)
+        const updateFlowURL = new URL(
+          `/self-service/registration?flow=${flowId}`,
+          baseAPI,
+        );
         const updateRes = await axios.post(
           updateFlowURL,
           {
-            method: 'password',
+            method: "password",
             password: this.password,
             traits: {
               email: this.email,
-              username: this.username
+              username: this.username,
             },
-            csrf_token: csrfToken
+            csrf_token: csrfToken,
           },
           {
-            withCredentials: true
-          }
-        )
+            withCredentials: true,
+          },
+        );
 
-        console.log('Registration success:', updateRes.data)
-		window.location.href = "/login";
+        console.log("Registration success:", updateRes.data);
+        window.location.href = "/login";
       } catch (error) {
-        console.error(error)
+        console.error(error);
         const errMsg =
           error.response?.data?.error?.reason ||
           error.response?.data?.ui?.messages?.[0]?.text ||
-          'Registration failed.'
-        this.message = errMsg
+          "Registration failed.";
+        this.message = errMsg;
       }
-
     },
   },
 };

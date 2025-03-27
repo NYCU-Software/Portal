@@ -43,8 +43,7 @@ import { RouterLink, RouterView } from "vue-router";
 </template>
 
 <script>
-
-import axios from "axios"
+import axios from "axios";
 import Cookies from "js-cookie";
 import MenuComponent from "./components/MenuComponent.vue";
 
@@ -71,20 +70,23 @@ export default {
       this.show = (this.show + 1) % 2;
     },
     async checkLogged() {
-      axios
-        .get(`${baseAPI}/sessions/whoami`, { withCredentials: true })
-        .then((res) => {
-          const data = res.data
+      try {
+        const whoamiURL = new URL("/sessions/whoami", baseAPI)
+        const r = await axios.get(whoamiURL.href, {
+          withCredentials: true,
+        })
+        if (r.data.active) {
           this.isLogged = 1
-          this.username = data.identity?.traits?.username || "Anonymous"
-          this.isAdmin = data.identity?.traits?.is_admin ? 1 : 0
-        })
-        .catch(() => {
+          this.username = r.data.identity.traits.username || "User"
+          console.log(r.data)
+        } else {
           this.isLogged = 0
-          this.isAdmin = 0
-          this.username = "Anonymous"
-        })
-    },
+        }
+      } catch (e) {
+		console.log(e)
+        this.isLogged = 0
+      }
+    }
   },
 };
 </script>
