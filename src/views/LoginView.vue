@@ -29,18 +29,6 @@
             <label for="loginField" class="block mb-2 text-sm font-medium">
               <span v-if="!showTotp">Password </span>
               <span v-else>TOTP Code </span>
-              <span
-                v-if="!showTotp"
-                class="text-blue-500 cursor-pointer"
-                @click="toggleTotp"
-                >(Use TOTP?)</span
-              >
-              <span
-                v-else
-                class="text-blue-500 cursor-pointer"
-                @click="toggleTotp"
-                >(Use Password)</span
-              >
             </label>
             <template v-if="!showTotp">
               <input
@@ -120,6 +108,18 @@ export default {
       );
       window.location = getFlowURL.href;
     }
+    const flowDetailsURL = new URL("/self-service/login/flows", baseAPI);
+    flowDetailsURL.searchParams.set("id", url.searchParams.get("flow"));
+    const flowRes = await axios.get(flowDetailsURL.toString(), {
+      withCredentials: true,
+    });
+    const csrfNode = flowRes.data.ui.nodes.find(
+      (n) => n.attributes.name === "csrf_token",
+    );
+    this.csrfToken = csrfNode ? csrfNode.attributes.value : "";
+    if (flowRes.data.requested_aal === "aal2") {
+      this.showTotp = true;
+    }
   },
   methods: {
     toggleTotp() {
@@ -131,28 +131,19 @@ export default {
         const flow = url.searchParams.get("flow");
         const postFlowURL = new URL("/self-service/login", baseAPI);
         postFlowURL.searchParams.set("flow", flow);
-        const flowDetailsURL = new URL("/self-service/login/flows", baseAPI);
-        flowDetailsURL.searchParams.set("id", flow);
-        const flowRes = await axios.get(flowDetailsURL.toString(), {
-          withCredentials: true,
-        });
-        const csrfNode = flowRes.data.ui.nodes.find(
-          (n) => n.attributes.name === "csrf_token",
-        );
-        const csrfToken = csrfNode ? csrfNode.attributes.value : "";
         let payload = {};
         if (this.showTotp) {
           payload = {
             method: "totp",
             totp_code: this.totpCode,
-            csrf_token: csrfToken,
+            csrf_token: this.csrfToken,
           };
         } else {
           payload = {
             method: "password",
             password_identifier: this.username,
             password: this.password,
-            csrf_token: csrfToken,
+            csrf_token: this.csrfToken,
           };
         }
         const r = await axios.post(postFlowURL.toString(), payload, {
@@ -164,10 +155,11 @@ export default {
       } catch (e) {
         console.log(e);
         if (e.status == 422) {
-          window.location.href = new URL(
+          const newURL = new URL(
             "/self-service/login/browser?aal=aal2",
             baseAPI,
-          ).href;
+          );
+          window.location.href = newURL.href;
         }
         this.message =
           JSON.parse(e.request.response)?.error?.reason ||
